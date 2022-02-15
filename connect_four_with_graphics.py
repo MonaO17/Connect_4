@@ -1,4 +1,3 @@
-from lib2to3.pgen2.token import COLON
 import numpy as np
 import pygame
 import sys
@@ -80,6 +79,9 @@ def draw_board(board):
                 pygame.draw.circle(screen, PLAYER_TWO_COLOR, (int(c*SQUARESIZE+SQUARESIZE/2), height-int(r*SQUARESIZE+SQUARESIZE/2)), RADIUS)
     pygame.display.update()
 
+def player_color(player):
+    pass
+
 # Game --------------------------------------------------------------------------------------------------------------------
 board = create_board()
 
@@ -139,8 +141,3 @@ while not game_over:
 
         if game_over:
             pygame.time.wait(3500)
-
-
-
-
-    
