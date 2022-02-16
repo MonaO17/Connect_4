@@ -5,7 +5,7 @@ import math
 import random
 
 # Variables --------------------------------------------------------------------------------------------------------------------
-ROW_COUNT = 6                       # Static variables are usually capitalized, to show that they are not changable
+ROW_COUNT = 6
 COLUMN_COUNT = 7
 GRID_COLOR = (3,75,97)
 PLAYER_COLOR = (188,95,106)
@@ -13,19 +13,19 @@ AI_COLOR = (25, 179, 177)
 WHITE = (255,255,255)
 SQUARESIZE = 100
 RADIUS = int(SQUARESIZE/2 - 5)
+WIDTH = COLUMN_COUNT*SQUARESIZE
+HEIGHT = (ROW_COUNT+1)*SQUARESIZE    # +1 row on top
+SIZE=(WIDTH, HEIGHT)                 # type = tupel
+
 PLAYER = 1
 AI = 2
-PLAYER_PIECE = 1
-AI_PIECE = 2
+PLAYER_TURN = 0
+AI_TURN = 1
+
 WINDOW_LENGTH = 4
 EMPTY = 0
-
-width = COLUMN_COUNT*SQUARESIZE
-height = (ROW_COUNT+1)*SQUARESIZE    # +1 row on top
-size=(width, height)                 # type = tupel
 game_over = False
 turn = random.randint(0,1)
-print(turn)
 
 # Functions --------------------------------------------------------------------------------------------------------------------
 # creates board-object
@@ -34,8 +34,8 @@ def create_board():
     return board
 
 # puts piece at selected location
-def drop_piece(board, row, col, piece):
-    board[row][col] = piece
+def drop_piece(board, row, col, player):
+    board[row][col] = player
 
 # check is selected location is available
 def is_valid_location(board, col):
@@ -43,98 +43,94 @@ def is_valid_location(board, col):
 
 # returns a list of valid locations
 def get_valid_locations(board):
-	valid_locations = []
-	for col in range(COLUMN_COUNT):
-		if is_valid_location(board, col):
-			valid_locations.append(col)
-	return valid_locations
+    valid_locations = []
+    for col in range(COLUMN_COUNT):
+        if is_valid_location(board, col):
+            valid_locations.append(col)
+    return valid_locations
 
 # r counts up the rows, function gives back first row where passed column == 0
 def get_next_open_row(board, col):
-    for r in range(ROW_COUNT):
-        if board[r][col] == 0:      
-            return r
+    for row in range(ROW_COUNT):
+        if board[row][col] == 0:      
+            return row
 
 # check all horizontals, verticals, diagonals for winning combination
-def winning_move(board, piece):
+def winning_move(board, player):
     # check horizontal location for win
     for c in range(COLUMN_COUNT-3):                     # -3 because a horizontal winning-combination cannot start in the last 3 columns
         for r in range(ROW_COUNT):
-            if board[r][c]==piece and board [r][c+1] == piece and board[r][c+2] == piece and board[r][c+3] == piece:
+            if board[r][c] == player and board [r][c+1] == player and board[r][c+2] == player and board[r][c+3] == player:
                 return True
     # check vertical location for win
     for c in range(COLUMN_COUNT):             
         for r in range(ROW_COUNT-3):                    # -3 because a vertical winning-combination cannot start in the last 3 rows
-            if board[r][c]==piece and board [r+1][c] == piece and board[r+2][c] == piece and board[r+3][c] == piece:
+            if board[r][c] == player and board [r+1][c] == player and board[r+2][c] == player and board[r+3][c] == player:
                 return True
     # check positivly sloped diagonals location for win
     for c in range(COLUMN_COUNT-3):            
         for r in range(ROW_COUNT-3):
-            if board[r][c]==piece and board [r+1][c+1] == piece and board[r+2][c+2] == piece and board[r+3][c+3] == piece:
+            if board[r][c] == player and board [r+1][c+1] == player and board[r+2][c+2] == player and board[r+3][c+3] == player:
                 return True
     # check negativly sloped diagonals location for win
     for c in range(COLUMN_COUNT-3):             
         for r in range(3, ROW_COUNT):
-            if board[r][c]==piece and board [r-1][c+1] == piece and board[r-2][c+2] == piece and board[r-3][c+3] == piece:
+            if board[r][c] == player and board [r-1][c+1] == player and board[r-2][c+2] == player and board[r-3][c+3] == player:
                 return True
 
 # Look at a window of 4 positions next to each other and count if 2,3,4 in a row
-def score_position(board, piece):
+def score_position(board, player):
     score = 0
     # Score center column
     center_array = [int(i) for i in list(board[:, COLUMN_COUNT//2])]
-    #for r in range(ROW_COUNT-3):
-    #    window = center_array[r:r-WINDOW_LENGTH]
-    #    score = (evaluate_window(window, piece))*3
-    center_count = center_array.count(piece)
+    center_count = center_array.count(player)
     score += center_count * 2
     # Score Horizontal
     for r in range(ROW_COUNT):
         row_array = [int(i) for i in list(board[r,:])] # array with row r & all column positions for that row
         for c in range(COLUMN_COUNT-3):
             window = row_array[c:c+WINDOW_LENGTH]
-            score += evaluate_window(window, piece)
+            score += evaluate_window(window, player)
     # Score Vertical
     for c in range(COLUMN_COUNT):
         col_array = [int(i) for i in list(board[:,c])]
         for r in range(ROW_COUNT-3):
             window = col_array[r:r+WINDOW_LENGTH]
-            score += evaluate_window(window, piece)
+            score += evaluate_window(window, player)
     # Score positive sloped diagonal
     for r in range(ROW_COUNT-3):
         for c in range(COLUMN_COUNT-3):
             window = [board[r+i][c+i] for i in range(WINDOW_LENGTH)]
-            score += evaluate_window(window, piece)
+            score += evaluate_window(window, player)
     # Score negative sloped diagonal
     for r in range(ROW_COUNT-3):
         for c in range(COLUMN_COUNT-3):
             window = [board[r+3-i][c+i] for i in range(WINDOW_LENGTH)]
-            score += evaluate_window(window, piece)
+            score += evaluate_window(window, player)
 
     return score
 
 # returns score depending on how many pieces of same player are in a (otherwise empty) window of 4
-def evaluate_window(window, piece):
-
+def evaluate_window(window, player):
     score = 0
-    opp_piece = PLAYER_PIECE
-    if piece == PLAYER_PIECE:
-        opp_piece = AI_PIECE
+    opp_player = PLAYER
+    if player == PLAYER:
+        opp_player = AI
     
-    if window.count(piece) == 4:
+    if window.count(player) == 4:
         score += 10000
-    elif window.count(piece) == 3 and window.count(EMPTY) == 1:
+    elif window.count(player) == 3 and window.count(EMPTY) == 1:
         score += 5
-    elif window.count(piece) == 2 and window.count(EMPTY) == 2:
+    elif window.count(player) == 2 and window.count(EMPTY) == 2:
         score += 2
 
-    if window.count(opp_piece) == 3 and window.count(EMPTY) == 1: # block opponent, if he/she has 3 in a row
-        score -= 4
+    if window.count(opp_player) == 3 and window.count(EMPTY) == 1: # block opponent, if he/she has 3 in a row
+        score -= 6
 
     return score
 
 # evaluates and returns column with highest score (= best possible move)
-def pick_best_move(board, piece):
+def pick_best_move(board, player):
     valid_locations = get_valid_locations(board)
     best_score = -1000 # negative number, so if score is negative (-4) it is still larger than this initialized best_score (-1000)
     best_col = random.choice(valid_locations)
@@ -142,8 +138,8 @@ def pick_best_move(board, piece):
     for col in valid_locations:
         row = get_next_open_row(board, col)
         temp_board = board.copy()  # need a copied board for simulation, because original board would use same memory location
-        drop_piece(temp_board, row, col, piece)
-        score = score_position(temp_board, piece)
+        drop_piece(temp_board, row, col, player)
+        score = score_position(temp_board, player)
         if score > best_score:
             best_score = score
             best_col = col
@@ -164,40 +160,38 @@ def draw_board(board):
     
     for c in range(COLUMN_COUNT):
         for r in range (ROW_COUNT):           
-            if board[r][c] == PLAYER_PIECE:
-                pygame.draw.circle(screen, PLAYER_COLOR, (int(c*SQUARESIZE+SQUARESIZE/2), height-int(r*SQUARESIZE+SQUARESIZE/2)), RADIUS)
-            elif board[r][c] == AI_PIECE:
-                pygame.draw.circle(screen, AI_COLOR, (int(c*SQUARESIZE+SQUARESIZE/2), height-int(r*SQUARESIZE+SQUARESIZE/2)), RADIUS)
+            if board[r][c] == PLAYER:
+                pygame.draw.circle(screen, PLAYER_COLOR, (int(c*SQUARESIZE+SQUARESIZE/2), HEIGHT-int(r*SQUARESIZE+SQUARESIZE/2)), RADIUS)
+            elif board[r][c] == AI:
+                pygame.draw.circle(screen, AI_COLOR, (int(c*SQUARESIZE+SQUARESIZE/2), HEIGHT-int(r*SQUARESIZE+SQUARESIZE/2)), RADIUS)
     pygame.display.update()
 
 # Game --------------------------------------------------------------------------------------------------------------------
 board = create_board()
 
 pygame.init()
-screen = pygame.display.set_mode(size)
+screen = pygame.display.set_mode(SIZE)
 draw_board(board)
-pygame.display.update()
 myfont = pygame.font.SysFont('Monospace', 75)
 
 while not game_over:
 
-    # all events: https://www.pygame.org/docs/ref/event.html
-    for event in pygame.event.get():
+    for event in pygame.event.get():            # all events: https://www.pygame.org/docs/ref/event.html
         if event.type == pygame.QUIT:           # if x (top right corner) is clicked => exit game/ close window
             sys.exit()
 
         if event.type == pygame.MOUSEMOTION:
-            pygame.draw.rect(screen, WHITE, (0,0,width, SQUARESIZE))
+            pygame.draw.rect(screen, WHITE, (0,0,WIDTH,SQUARESIZE))
+            #print(event.pos)
             posx = event.pos[0]
-            if turn == 0:
+            if turn == PLAYER_TURN:
                 pygame.draw.circle(screen, PLAYER_COLOR, (posx, int(SQUARESIZE/2)), RADIUS)
-
             pygame.display.update()
 
-        if event.type == pygame.MOUSEBUTTONDOWN or turn == 1 and not game_over:
-            pygame.draw.rect(screen, WHITE, (0,0,width, SQUARESIZE))
-            # choose player
-            if turn == 0:
+        if event.type == pygame.MOUSEBUTTONDOWN or turn == AI_TURN and not game_over:
+            pygame.draw.rect(screen, WHITE, (0,0,WIDTH, SQUARESIZE))
+            # choose player & set variables
+            if turn == PLAYER_TURN:
                 player = PLAYER
                 current_color = PLAYER_COLOR
                 posx = event.pos[0]
@@ -206,7 +200,7 @@ while not game_over:
                 player = AI
                 current_color = AI_COLOR
                 pygame.time.wait(500)
-                col = pick_best_move(board, AI_PIECE)
+                col = pick_best_move(board, AI)
                 
             # play turn
             if is_valid_location(board, col):
@@ -227,46 +221,3 @@ while not game_over:
 
         if game_over:
             pygame.time.wait(3500)
-
-""" 
-                    if event.type == pygame.MOUSEBUTTONDOWN:
-                pygame.draw.rect(screen, WHITE, (0,0, width, SQUARESIZE))
-                # Ask for Player 1 Input
-                if turn == 0:
-                    posx = event.pos[0]
-                    col = int(math.floor(posx/SQUARESIZE))
-
-                    if is_valid_location(board, col):
-                        row = get_next_open_row(board, col)
-                        drop_piece(board, row, col, PLAYER_PIECE)
-
-                        if winning_move(board, PLAYER_PIECE):
-                            label = myfont.render("Player 1 wins!", 1, PLAYER_COLOR)
-                            screen.blit(label, (40,10))
-                            game_over = True
-
-                        turn += 1
-                        turn = turn % 2
-
-                        print_board(board)
-                        draw_board(board)
-
-        # # Ask for Player 2 Input
-        if turn == 1 and not game_over:
-            col = pick_best_move(board, AI_PIECE)
-
-            if is_valid_location(board, col):
-                pygame.time.wait(500)
-                row = get_next_open_row(board, col)
-                drop_piece(board, row, col, AI_PIECE)
-
-                if winning_move(board, AI_PIECE):
-                    label = myfont.render("Player 2 wins!", 1, AI_COLOR)
-                    screen.blit(label, (40,10))
-                    game_over = True
-
-                print_board(board)
-                draw_board(board)
-
-                turn += 1
-                turn = turn % 2 """
