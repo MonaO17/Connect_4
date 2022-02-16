@@ -33,10 +33,6 @@ def create_board():
     board = np.zeros((ROW_COUNT,COLUMN_COUNT))         # creates matrix with 6 columns and 7 rows, filled with '0'
     return board
 
-# puts piece at selected location
-def drop_piece(board, row, col, player):
-    board[row][col] = player
-
 # check is selected location is available
 def is_valid_location(board, col):
     return board[ROW_COUNT-1][col] == 0                 # if the top row for the selected column is empty, the location is valid
@@ -54,6 +50,10 @@ def get_next_open_row(board, col):
     for row in range(ROW_COUNT):
         if board[row][col] == 0:      
             return row
+
+# puts piece at selected location
+def drop_piece(board, row, col, player):
+    board[row][col] = player
 
 # check all horizontals, verticals, diagonals for winning combination
 def winning_move(board, player):
@@ -78,34 +78,34 @@ def winning_move(board, player):
             if board[r][c] == player and board [r-1][c+1] == player and board[r-2][c+2] == player and board[r-3][c+3] == player:
                 return True
 
-# Look at a window of 4 positions next to each other and count if 2,3,4 in a row
-def score_position(board, player):
+# Splits board in windows of 4 coherent positions and evaluates them, returns score
+def score_position(temp_board, player):
     score = 0
     # Score center column
-    center_array = [int(i) for i in list(board[:, COLUMN_COUNT//2])]
+    center_array = [int(i) for i in list(temp_board[:, COLUMN_COUNT//2])]
     center_count = center_array.count(player)
     score += center_count * 2
     # Score Horizontal
     for r in range(ROW_COUNT):
-        row_array = [int(i) for i in list(board[r,:])] # array with row r & all column positions for that row
+        row_array = [int(i) for i in list(temp_board[r,:])] # array with row r & all column positions for that row
         for c in range(COLUMN_COUNT-3):
             window = row_array[c:c+WINDOW_LENGTH]
             score += evaluate_window(window, player)
     # Score Vertical
     for c in range(COLUMN_COUNT):
-        col_array = [int(i) for i in list(board[:,c])]
+        col_array = [int(i) for i in list(temp_board[:,c])]
         for r in range(ROW_COUNT-3):
             window = col_array[r:r+WINDOW_LENGTH]
             score += evaluate_window(window, player)
     # Score positive sloped diagonal
     for r in range(ROW_COUNT-3):
         for c in range(COLUMN_COUNT-3):
-            window = [board[r+i][c+i] for i in range(WINDOW_LENGTH)]
+            window = [temp_board[r+i][c+i] for i in range(WINDOW_LENGTH)]
             score += evaluate_window(window, player)
     # Score negative sloped diagonal
     for r in range(ROW_COUNT-3):
         for c in range(COLUMN_COUNT-3):
-            window = [board[r+3-i][c+i] for i in range(WINDOW_LENGTH)]
+            window = [temp_board[r+3-i][c+i] for i in range(WINDOW_LENGTH)]
             score += evaluate_window(window, player)
 
     return score
@@ -118,7 +118,7 @@ def evaluate_window(window, player):
         opp_player = AI
     
     if window.count(player) == 4:
-        score += 10000
+        score += 100
     elif window.count(player) == 3 and window.count(EMPTY) == 1:
         score += 5
     elif window.count(player) == 2 and window.count(EMPTY) == 2:
@@ -132,7 +132,7 @@ def evaluate_window(window, player):
 # evaluates and returns column with highest score (= best possible move)
 def pick_best_move(board, player):
     valid_locations = get_valid_locations(board)
-    best_score = -1000 # negative number, so if score is negative (-4) it is still larger than this initialized best_score (-1000)
+    best_score = -100 # negative number, so if score is negative (-4) it is still larger than this initialized best_score (-1000)
     best_col = random.choice(valid_locations)
     # simulate dropping piece in board and score position
     for col in valid_locations:
@@ -171,8 +171,8 @@ board = create_board()
 
 pygame.init()
 screen = pygame.display.set_mode(SIZE)
-draw_board(board)
 myfont = pygame.font.SysFont('Monospace', 75)
+draw_board(board)
 
 while not game_over:
 
