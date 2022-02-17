@@ -14,8 +14,8 @@ WHITE = (255,255,255)
 SQUARESIZE = 100
 RADIUS = int(SQUARESIZE/2 - 5)
 WIDTH = COLUMN_COUNT*SQUARESIZE
-HEIGHT = (ROW_COUNT+1)*SQUARESIZE    # +1 row on top
-SIZE=(WIDTH, HEIGHT)                 # type = tupel
+HEIGHT = (ROW_COUNT+1)*SQUARESIZE
+SIZE=(WIDTH, HEIGHT)
 
 PLAYER = 1
 AI = 2
@@ -188,7 +188,7 @@ while not game_over:
                 pygame.draw.circle(screen, PLAYER_COLOR, (posx, int(SQUARESIZE/2)), RADIUS)
             pygame.display.update()
 
-        if event.type == pygame.MOUSEBUTTONDOWN or turn == AI_TURN and not game_over:
+        if event.type == pygame.MOUSEBUTTONDOWN or turn == AI_TURN:
             pygame.draw.rect(screen, WHITE, (0,0,WIDTH, SQUARESIZE))
             # choose player & set variables
             if turn == PLAYER_TURN:
