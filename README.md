@@ -1,6 +1,8 @@
 # Connect_4
 
-Copied (with minor changes) from KeithGalli
+<img width="525" alt="Connect4" src="https://user-images.githubusercontent.com/82702416/156918324-23835bf4-35a3-4be5-8891-1b9d5e99717b.PNG">
+
+Copied (with some changes) from KeithGalli
 
 Tutorials:
 - https://www.youtube.com/watch?v=UYgyRArKDEs
